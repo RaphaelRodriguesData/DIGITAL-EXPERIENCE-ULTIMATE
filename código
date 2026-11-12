@@ -1,0 +1,344 @@
+// ============================================================
+//  REPRODUTOR DE MUSICAS
+//  Como funciona:
+//   - No MENU, o potenciometro escolhe a musica (LCD mostra o nome)
+//   - Botao PLAY  (pino 10): toca a musica escolhida / continua se estiver pausada
+//   - Botao PAUSE (pino 12): pausa (LED vermelho)
+//   - Botao STOP  (pino 11): para e volta ao menu
+//   - LED verde = tocando | LED vermelho = pausado
+// ============================================================
+#include <LiquidCrystal.h>   // biblioteca do LCD 16x2 normal (sem I2C)
+#include <avr/pgmspace.h>   // permite guardar as musicas na memoria FLASH
+
+// ---------------- Pinos ----------------
+int btnStart = 10;
+int btnSair  = 11;
+int btnPause = 12;
+int ledRed   = 2;
+int ledGreen = 4;
+int buzzer   = 8;
+int pot      = A0;
+
+// LCD 16x2 normal: LiquidCrystal lcd(RS, E, D4, D5, D6, D7)
+LiquidCrystal lcd(3, 5, 6, 7, 9, 13);
+
+// ---------------- Notas musicais (frequencia em Hz) ----------------
+#define REST 0
+#define NOTE_C4  262
+#define NOTE_CS4 277
+#define NOTE_D4  294
+#define NOTE_DS4 311
+#define NOTE_E4  330
+#define NOTE_F4  349
+#define NOTE_FS4 370
+#define NOTE_G4  392
+#define NOTE_GS4 415
+#define NOTE_A4  440
+#define NOTE_AS4 466
+#define NOTE_B4  494
+#define NOTE_C5  523
+#define NOTE_CS5 554
+#define NOTE_D5  587
+#define NOTE_DS5 622
+#define NOTE_E5  659
+#define NOTE_F5  698
+#define NOTE_FS5 740
+#define NOTE_G5  784
+#define NOTE_GS5 831
+#define NOTE_A5  880
+#define NOTE_AS5 932
+#define NOTE_B5  988
+#define NOTE_C6  1047
+#define NOTE_CS6 1109
+#define NOTE_D6  1175
+#define NOTE_DS6 1245
+#define NOTE_E6  1319
+#define NOTE_F6  1397
+#define NOTE_FS6 1480
+#define NOTE_G6  1568
+#define NOTE_GS6 1661
+#define NOTE_A6  1760
+#define NOTE_AS6 1865
+#define NOTE_B6  1976
+
+// ---------------- Nomes das musicas (maximo 14 letras) ----------------
+const char* nomes[5] = { "Pantera Rosa", "Tokyo Drift", "Subway Surf", "Pac-Man", "Tetris" };
+
+// ---------------- Dados das musicas ----------------
+// PROGMEM = guarda o vetor na memoria FLASH (e nao na RAM, que so tem 2 KB).
+// As 5 musicas ficam emendadas em UM vetor de notas e UM vetor de duracoes.
+// A duracao de cada nota esta em milissegundos.
+const int notas[] PROGMEM = {
+  // Musica 0 (Pantera Cor de Rosa)
+  REST, REST, REST, NOTE_DS4, NOTE_E4, REST, NOTE_FS4, NOTE_G4,
+  REST, NOTE_DS4, NOTE_E4, NOTE_FS4, NOTE_G4, NOTE_C5, NOTE_B4, NOTE_E4,
+  NOTE_G4, NOTE_B4, NOTE_AS4, NOTE_A4, NOTE_G4, NOTE_E4, NOTE_D4, NOTE_E4,
+  REST, REST, NOTE_DS4, NOTE_E4, REST, NOTE_FS4, NOTE_G4, REST,
+  NOTE_DS4, NOTE_E4, NOTE_FS4, NOTE_G4, NOTE_C5, NOTE_B4, NOTE_G4, NOTE_B4,
+  NOTE_E5, NOTE_DS5, NOTE_D5, REST, REST, NOTE_DS4, NOTE_E4, REST,
+  NOTE_FS4, NOTE_G4, REST, NOTE_DS4, NOTE_E4, NOTE_FS4, NOTE_G4, NOTE_C5,
+  NOTE_B4, NOTE_E4, NOTE_G4, NOTE_B4, NOTE_AS4, NOTE_A4, NOTE_G4, NOTE_E4,
+  NOTE_D4, NOTE_E4, REST, REST, NOTE_E5, NOTE_D5, NOTE_B4, NOTE_A4,
+  NOTE_G4, NOTE_E4, NOTE_AS4, NOTE_A4, NOTE_AS4, NOTE_A4, NOTE_AS4, NOTE_A4,
+  NOTE_AS4, NOTE_A4, NOTE_G4, NOTE_E4, NOTE_D4, NOTE_E4, NOTE_E4, NOTE_E4,
+  // Musica 1 (Tokyo Drift)
+  NOTE_AS4, REST, NOTE_AS4, REST, NOTE_AS4, REST, NOTE_AS4, REST,
+  NOTE_AS4, NOTE_B4, NOTE_DS5, NOTE_AS4, REST, NOTE_AS4, REST, NOTE_AS4,
+  NOTE_B4, NOTE_DS5, NOTE_AS4, REST, NOTE_AS4, REST, NOTE_AS4, NOTE_B4,
+  NOTE_DS5, NOTE_AS4, REST, NOTE_AS4, REST, NOTE_AS4, NOTE_B4, NOTE_DS5,
+  NOTE_F5, REST, NOTE_F5, REST, NOTE_GS5, NOTE_FS5, NOTE_F5, NOTE_AS4,
+  REST, NOTE_AS4, REST, NOTE_GS5, NOTE_FS5, NOTE_F5, NOTE_AS4, REST,
+  NOTE_AS4, REST, NOTE_AS4, NOTE_B4, NOTE_DS5, NOTE_AS4, REST, NOTE_AS4,
+  REST, NOTE_AS4, NOTE_B4, NOTE_DS5, NOTE_AS4, REST, NOTE_AS4, REST,
+  REST,
+  // Musica 2 (Subway Surf) 
+  NOTE_C4, REST, NOTE_G4, REST, NOTE_AS4, NOTE_C5, NOTE_AS4, REST,
+  NOTE_F4, NOTE_DS4, REST, NOTE_C4, REST, NOTE_G4, REST, NOTE_AS4,
+  NOTE_C5, NOTE_AS4, REST, NOTE_F4, NOTE_DS4, REST, NOTE_C4, REST,
+  NOTE_G4, REST, NOTE_AS4, NOTE_C5, NOTE_AS4, REST, NOTE_F4, NOTE_DS4,
+  REST, NOTE_C4, REST, NOTE_E4, REST, NOTE_G4, NOTE_A4, NOTE_AS4,
+  NOTE_C5, REST, NOTE_C5, REST, NOTE_AS4, REST, NOTE_A4, REST,
+  NOTE_AS4, REST, NOTE_AS4, NOTE_C5, REST, NOTE_AS4, NOTE_A4, REST,
+  REST, NOTE_C5, REST, NOTE_AS4, REST, NOTE_A4, REST, NOTE_AS4,
+  REST, NOTE_E5, REST, NOTE_C5, REST, NOTE_C5, REST, NOTE_AS4,
+  REST, NOTE_A4, REST, NOTE_AS4, REST, NOTE_AS4, NOTE_C5, REST,
+  NOTE_AS4, NOTE_A4, REST, REST, NOTE_C5, REST, NOTE_AS4, REST,
+  NOTE_A4, REST, NOTE_AS4, REST, NOTE_E4, REST,
+  // Musica 3 (Pac-Man) 
+  NOTE_B4, NOTE_B5, NOTE_FS5, NOTE_DS5, NOTE_B5, NOTE_FS5, NOTE_DS5, NOTE_C5,
+  NOTE_C6, NOTE_G6, NOTE_E6, NOTE_C6, NOTE_G6, NOTE_E6, NOTE_B4, NOTE_B5,
+  NOTE_FS5, NOTE_DS5, NOTE_B5, NOTE_FS5, NOTE_DS5, NOTE_DS5, NOTE_E5, NOTE_F5,
+  NOTE_F5, NOTE_FS5, NOTE_G5, NOTE_G5, NOTE_GS5, NOTE_A5, NOTE_B5,
+  // Musica 4 (Tetris) 
+  NOTE_E5, NOTE_B4, NOTE_C5, NOTE_D5, NOTE_C5, NOTE_B4, NOTE_A4, NOTE_A4,
+  NOTE_C5, NOTE_E5, NOTE_D5, NOTE_C5, NOTE_B4, NOTE_C5, NOTE_D5, NOTE_E5,
+  NOTE_C5, NOTE_A4, NOTE_A4, REST, REST, NOTE_D5, NOTE_F5, NOTE_A5,
+  NOTE_G5, NOTE_F5, NOTE_E5, NOTE_C5, NOTE_E5, NOTE_D5, NOTE_C5, NOTE_B4,
+  NOTE_B4, NOTE_C5, NOTE_D5, NOTE_E5, NOTE_C5, NOTE_A4, NOTE_A4, REST,
+  NOTE_E5, NOTE_C5, NOTE_D5, NOTE_B4, NOTE_C5, NOTE_A4, NOTE_B4, NOTE_E5,
+  NOTE_C5, NOTE_D5, NOTE_B4, NOTE_C5, NOTE_E5, NOTE_A5, NOTE_GS5, NOTE_E5,
+  NOTE_B4, NOTE_C5, NOTE_D5, NOTE_C5, NOTE_B4, NOTE_A4, NOTE_A4, NOTE_C5,
+  NOTE_E5, NOTE_D5, NOTE_C5, NOTE_B4, NOTE_C5, NOTE_D5, NOTE_E5, NOTE_C5,
+  NOTE_A4, NOTE_A4, REST, REST, NOTE_D5, NOTE_F5, NOTE_A5, NOTE_G5,
+  NOTE_F5, REST, NOTE_E5, NOTE_C5, NOTE_E5, NOTE_D5, NOTE_C5, REST,
+  NOTE_B4, NOTE_C5, NOTE_D5, NOTE_E5, REST, NOTE_C5, NOTE_A4, NOTE_A4,
+  REST
+};
+
+const int duracoes[] PROGMEM = {
+  //Musica 0 (Pantera Cor de Rosa)
+  648, 324, 162, 162, 324, 162, 162, 324,
+  162, 162, 162, 162, 162, 162, 162, 162,
+  162, 162, 648, 81, 81, 81, 81, 648,
+  324, 162, 324, 324, 162, 162, 324, 162,
+  162, 162, 162, 162, 162, 162, 162, 162,
+  162, 1297, 648, 324, 162, 162, 324, 162,
+  162, 324, 162, 162, 162, 162, 162, 162,
+  162, 162, 162, 162, 648, 81, 81, 81,
+  81, 324, 324, 324, 162, 162, 162, 162,
+  162, 162, 81, 162, 81, 162, 81, 162,
+  81, 162, 81, 81, 81, 81, 81, 648,
+  // Musica 1 (Tokyo Drift) 
+  324, 324, 324, 324, 324, 324, 324, 324,
+  432, 432, 324, 324, 324, 324, 324, 432,
+  432, 324, 324, 324, 324, 324, 432, 432,
+  324, 324, 324, 324, 324, 432, 432, 324,
+  324, 324, 324, 324, 432, 432, 324, 324,
+  324, 324, 324, 432, 432, 324, 324, 324,
+  324, 324, 432, 432, 324, 324, 324, 324,
+  324, 432, 432, 324, 324, 324, 324, 324,
+  1297,
+  //  Musica 2 (Subway Surf) 
+  324, 162, 324, 162, 324, 162, 162, 81,
+  162, 162, 81, 324, 162, 324, 162, 324,
+  162, 162, 81, 162, 162, 81, 324, 162,
+  324, 162, 324, 162, 162, 81, 162, 162,
+  81, 324, 162, 324, 162, 324, 324, 324,
+  162, 81, 162, 81, 162, 81, 162, 81,
+  162, 81, 162, 162, 81, 162, 162, 81,
+  324, 162, 81, 162, 81, 162, 81, 162,
+  324, 162, 324, 162, 81, 162, 81, 162,
+  81, 162, 81, 162, 81, 162, 162, 81,
+  162, 162, 81, 324, 162, 81, 162, 81,
+  162, 81, 162, 324, 162, 1297,
+  // Musica 3 (Pac-Man) 
+  142, 142, 142, 142, 71, 213, 285, 142,
+  142, 142, 142, 71, 213, 285, 142, 142,
+  142, 142, 71, 213, 285, 71, 71, 71,
+  71, 71, 71, 71, 71, 142, 285,
+  // Musica 4 (Tetris) 
+  416, 208, 208, 416, 208, 208, 416, 208,
+  208, 416, 208, 208, 624, 208, 416, 416,
+  416, 416, 416, 416, 208, 416, 208, 416,
+  208, 208, 624, 208, 416, 208, 208, 416,
+  208, 208, 416, 416, 416, 416, 416, 416,
+  833, 833, 833, 833, 833, 833, 1666, 833,
+  833, 833, 833, 416, 416, 833, 1666, 416,
+  208, 208, 416, 208, 208, 416, 208, 208,
+  416, 208, 208, 624, 208, 416, 416, 416,
+  416, 416, 416, 208, 416, 208, 416, 208,
+  208, 208, 416, 208, 416, 208, 208, 208,
+  416, 208, 416, 416, 208, 416, 208, 416,
+  416
+};
+
+// Em qual posicao do vetor cada musica comeca (a ultima e o fim da musica 4)
+const int inicio[6] = { 0, 88, 153, 247, 278, 375 };
+
+// ---------------- Variaveis ----------------
+int musicaEscolhida = 0;    // musica selecionada no menu (0 a 4)
+int musicaAnterior  = -1;   // ajuda a atualizar o LCD so quando muda
+bool parar = false;         // vira true quando o STOP e apertado
+
+// Nivel lido no pino quando o botao esta SOLTO (descoberto no setup)
+int soltoStart, soltoPause, soltoSair;
+
+// ============================================================
+void setup() {
+  // INPUT_PULLUP: o botao liga o pino ao GND (solto = HIGH, apertado = LOW)
+  pinMode(btnStart, INPUT_PULLUP);
+  pinMode(btnPause, INPUT_PULLUP);
+  pinMode(btnSair,  INPUT_PULLUP);
+
+  // Descobre como os botoes estao ligados: com NENHUM botao apertado,
+  // guarda o nivel de cada pino. "Apertado" = nivel diferente desse.
+  // (por isso nao aperte nada nos primeiros instantes da simulacao)
+  delay(100);
+  soltoStart = digitalRead(btnStart);
+  soltoPause = digitalRead(btnPause);
+  soltoSair  = digitalRead(btnSair);
+
+  pinMode(ledRed, OUTPUT);
+  pinMode(ledGreen, OUTPUT);
+  pinMode(buzzer, OUTPUT);
+
+  lcd.begin(16, 2);
+
+  lcd.print("Reprodutor de");
+  lcd.setCursor(0, 1);
+  lcd.print("Musicas");
+  delay(1500);
+}
+
+// ============================================================
+void loop() {
+  // ----- MENU -----
+  // le o potenciometro (0 a 1023) e transforma em 0 a 4
+  musicaEscolhida = map(analogRead(pot), 0, 1024, 0, 5);
+
+  // so redesenha o LCD quando a musica muda (evita ficar piscando)
+  if (musicaEscolhida != musicaAnterior) {
+    musicaAnterior = musicaEscolhida;
+    lcd.clear();
+    lcd.print("Musica ");
+    lcd.print(musicaEscolhida + 1);
+    lcd.print("/5");
+    lcd.setCursor(0, 1);
+    lcd.print("> ");
+    lcd.print(nomes[musicaEscolhida]);
+  }
+
+  // botao PLAY apertado -> toca a musica escolhida
+  if (apertado(btnStart)) {
+    esperarSoltar(btnStart);    // espera soltar o botao (anti-ruido)
+    tocarMusica(musicaEscolhida);
+    musicaAnterior = -1;        // forca o LCD a mostrar o menu de novo
+  }
+}
+
+// ============================================================
+// Toca uma musica inteira (ou ate pausar)
+void tocarMusica(int m) {
+  parar = false;
+
+  lcd.clear();
+  lcd.print("Tocando:");
+  lcd.setCursor(0, 1);
+  lcd.print(nomes[m]);
+  digitalWrite(ledGreen, HIGH);
+  digitalWrite(ledRed, LOW);
+
+  // passa por todas as notas da musica m
+  for (int i = inicio[m]; i < inicio[m + 1]; i++) {
+    if (parar) break;
+
+    // pgm_read_word le um valor guardado na memoria FLASH
+    int nota    = pgm_read_word(&notas[i]);
+    int duracao = pgm_read_word(&duracoes[i]);
+
+    if (nota == 0) {
+      noTone(buzzer);                       // 0 = silencio (pausa na musica)
+    } else {
+      tone(buzzer, nota, duracao * 0.9);    // toca a nota
+    }
+
+    esperar(duracao);                       // espera a nota acabar
+  }
+
+  // terminou ou apertou STOP: volta ao menu
+  noTone(buzzer);
+  digitalWrite(ledGreen, LOW);
+  digitalWrite(ledRed, LOW);
+}
+
+// ============================================================
+// Espera "ms" milissegundos, mas continua olhando os botoes
+// (por isso nao usamos delay: com delay nao daria para pausar)
+void esperar(int ms) {
+  unsigned long fim = millis() + ms;
+
+  while (millis() < fim && !parar) {
+    if (apertado(btnPause)) {
+      esperarSoltar(btnPause);
+      pausar();
+    }
+    if (apertado(btnSair)) {
+      esperarSoltar(btnSair);
+      parar = true;
+    }
+  }
+}
+
+// ============================================================
+// Fica aqui dentro ate apertar continua ou parar
+void pausar() {
+  noTone(buzzer);
+  digitalWrite(ledGreen, LOW);
+  digitalWrite(ledRed, HIGH);
+
+  lcd.setCursor(0, 0);
+  lcd.print("Pausado:        ");
+
+  while (true) {
+    if (apertado(btnStart)) {               // PLAY: despausa a musica
+      esperarSoltar(btnStart);
+      digitalWrite(ledRed, LOW);
+      digitalWrite(ledGreen, HIGH);
+      lcd.setCursor(0, 0);
+      lcd.print("Tocando:        ");
+      return;
+    }
+    if (apertado(btnSair)) {                // STOP: volta ao menu
+      esperarSoltar(btnSair);
+      parar = true;
+      return;
+    }
+  }
+}
+
+// ============================================================
+// Devolve true se o botao desse pino esta apertado agora
+bool apertado(int pino) {
+  int solto = soltoStart;
+  if (pino == btnPause) solto = soltoPause;
+  if (pino == btnSair)  solto = soltoSair;
+  return digitalRead(pino) != solto;
+}
+
+// ============================================================
+// Espera o botao ser solto (com um pequeno tempo para filtrar ruido)
+void esperarSoltar(int pino) {
+  delay(50);
+  while (apertado(pino)) { }
+  delay(50);
+}
