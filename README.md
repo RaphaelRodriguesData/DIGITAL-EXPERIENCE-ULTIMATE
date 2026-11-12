@@ -68,7 +68,7 @@ Vídeos do projeto funcionando:
 ## Tecnologias utilizadas
 
 - Arduino UNO
-- Linguagem C/C++ (Arduino IDE)
+- Linguagem C (Arduino IDE)
 - Tinkercad (simulação do circuito)
 - Biblioteca LiquidCrystal (LCD na simulação)
 - Biblioteca LiquidCrystal_I2C (LCD com módulo I2C no físico)
