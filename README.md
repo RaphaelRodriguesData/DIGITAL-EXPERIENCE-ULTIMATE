@@ -12,7 +12,7 @@ A ideia do projeto foi montar um pequeno "player" de músicas usando um Arduino 
 
 Objetivos:
 
-- Tocar músicas conhecidas (como Pac-Man) usando apenas um buzzer;
+- Tocar 5 músicas conhecidas (Pantera cor de rosa, Pac-Man, Subway Surf, Tokyo drift e Tetris) usando apenas um buzzer;
 - Mostrar no LCD qual música está selecionada (Musica 4/5 > Pac-Man);
 - Permitir a troca de músicas pelos botões;
 - Indicar o estado do player com LEDs.
@@ -38,7 +38,8 @@ Passo a passo
 3. Programação: juntamos as músicas em um único código e implementamos a lógica dos botões, LEDs e do display.
 4. Montagem física: na simulação usamos o LCD 16x2 comum (ligado em vários pinos), mas no projeto físico usamos um LCD com módulo I2C, que usa só dois fios de dados (SDA e SCL) e deixa a montagem bem mais simples.
 
-Circuito montado no Tinkercad:
+
+[Circuito montado no Tinkercad:](https://www.tinkercad.com/things/4BOl5XSJOVI-reprodutordemusicaprojetofei)
 
 Circuito no Tinkercad ( imagem e video em suas respectivas pastas )
 
