@@ -44,6 +44,7 @@ Circuito no Tinkercad ( imagem e video em suas respectivas pastas )
 
 Projeto físico montado:
 
+<img src="img/WhatsApp%20Image%202026-11-11%20at%2023.48.25.jpeg" width="300">
 
 Experimentos
 
@@ -51,18 +52,18 @@ Sequência do projeto em funcionamento:
 
 1. Ligando o LCD I2C: o display é conectado à protoboard com apenas 4 fios (VCC, GND, SDA e SCL) e o código é enviado pela Arduino IDE.
 
-   <img src="img/montagem-lcd.png" width="300">
+   <img src="img/WhatsApp%20Image%202026-11-11%20at%2023.48.26.jpeg" width="300">
 
 2. Selecionando a música: com os botões, o usuário navega pela lista e o LCD mostra o número e o nome da música atual (na foto, Musica 3/5 > Subway Surf).
 
-   <img src="img/funcionando.png" width="300">
+   <img src="img/WhatsApp%20Image%202026-11-11%20at%2023.49.10.jpeg" width="300">
 
 3. Tocando a música: o buzzer toca a melodia selecionada e os LEDs indicam o estado do player.
 
 Vídeos do projeto funcionando:
 
-- [Vídeo 1](videos/video-1.mp4)
-- [Vídeo 2](videos/video-2.mp4)
+- [Vídeo 1](videos/WhatsApp%20Video%202026-11-11%20at%2023.49.25.mp4)
+- [Vídeo 2](videos/WhatsApp%20Video%202026-11-11%20at%2023.49.41.mp4)
 
 ## Tecnologias utilizadas
 
