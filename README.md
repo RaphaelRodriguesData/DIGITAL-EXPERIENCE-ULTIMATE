@@ -2,9 +2,9 @@
 
 Projeto por:
 
+- Bruno Vieira Silva Golçalvez
 - Fernando Risseto de Amorim
-- Raphael
-- Bruno
+- Raphael Rodrigues de Oliveira
 
 Ideia do projeto 
 
