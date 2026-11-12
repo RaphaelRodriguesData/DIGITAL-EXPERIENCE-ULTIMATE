@@ -22,7 +22,7 @@ Materiais utilizados
 
 - 1x Arduino UNO
 - 1x Protoboard
-- 1x Display LCD 16x2 (no físico, com módulo I2C)
+- 1x Display LCD 16x2 (I2C)
 - 1x Buzzer 
 - 3x Botões 
 - 1x LED vermelho
@@ -71,7 +71,6 @@ Vídeos do projeto funcionando:
 - Arduino UNO
 - Linguagem C (Arduino IDE)
 - Tinkercad (simulação do circuito)
-- Biblioteca LiquidCrystal (LCD na simulação)
 - Biblioteca LiquidCrystal_I2C (LCD com módulo I2C no físico)
 - Função tone() para gerar as notas no buzzer
 - GitHub (código e documentação)
